@@ -39,8 +39,14 @@ def chat_with_bot(session_id: str, message: str):
 
 def handler(event, context):
     try:
-        # イベントデータの 'body' キーをJSONとしてパース
-        result = chat_with_bot(session_id=event['queryStringParameters']['user_id'], message=event['queryStringParameters']['message'])
+        session_id = event.get('queryStringParameters', {}).get('user_id', None)
+        if session_id is None:
+            return {'statusCode': 400, 'body': json.dumps('user_id is required.')}
+        message = event.get('queryStringParameters', {}).get('message', None)
+        if message is None:
+            return {'statusCode': 400, 'body': json.dumps('message is required.')}
+        
+        result = chat_with_bot(session_id=session_id, message=message)
         print(result)
         return {'statusCode': 200, 'body': json.dumps({'message': result})}
     
