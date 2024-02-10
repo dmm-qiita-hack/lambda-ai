@@ -3,8 +3,8 @@ import traceback
 from langchain.chat_models import AzureChatOpenAI
 from langchain.memory.chat_message_histories import DynamoDBChatMessageHistory
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain import ConversationChain
+from langchain.prompts import MessagesPlaceholder, SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
 
 chat = AzureChatOpenAI(openai_api_version="2023-05-15", deployment_name="takatsu")
 
@@ -13,35 +13,25 @@ def chat_with_bot(session_id: str, message: str, profile: str):
     memory = ConversationBufferWindowMemory(
         memory_key="chat_history", chat_memory=chat_history, return_messages=True, k=3
     )
-    prompt = PromptTemplate(
-        input_variables=["chat_history","Query", "profile"],
-        template="""
-        あなたはエンジニアマネージャーです。
-        駆け出しエンジニアと会話してください。
-        ```
-
-        ```チャット履歴
-        {chat_history}
-        ```
-
-        ```駆け出しエンジニアのプロフィール
-        {profile}
-        ```
-
-        ```駆け出しエンジニアの発言
-        {Query}
-        ```
+    system_template = f"""
+    あなたはエンジニアマネージャーです。 駆け出しエンジニアと会話してください。
+    # 駆け出しエンジニアのプロフィール
+    {profile}
     """
-    )
-    prompt.format(profile=profile)
+    system_prompt = SystemMessagePromptTemplate.from_template(system_template)
+    prompt = ChatPromptTemplate.from_messages([
+        system_prompt,
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanMessagePromptTemplate.from_template("{input}")
+    ])
 
-    llm_chain = LLMChain(
+    llm_chain = ConversationChain(
         llm=chat,
         prompt=prompt,
         verbose=False,
         memory=memory,
     )
-    return llm_chain.predict(Query=message)
+    return llm_chain.run(message)
 
 def make_profile(username: str, note: str, proffesional_skill: str):
     profile =  f"""
