@@ -5,7 +5,7 @@ import requests
 
 def handler(event, context):
     # APIエンドポイントのURL
-    api_url = "http://infra-template-1164281699.ap-northeast-1.elb.amazonaws.com/v1/messages/schedule"
+    api_url = "https://aiconnectdev.net/v1/messages/schedule"
 
     # GETリクエストを送信
     response = requests.get(api_url)
